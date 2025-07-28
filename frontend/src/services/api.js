@@ -11,6 +11,8 @@ class ApiService {
     this.token = token;
     if (typeof window !== 'undefined') {
       localStorage.setItem('accio-token', token);
+      // Dispatch custom event to notify components about auth state change
+      window.dispatchEvent(new CustomEvent('authStateChanged', { detail: { isLoggedIn: true } }));
     }
   }
 
@@ -19,6 +21,8 @@ class ApiService {
     this.token = null;
     if (typeof window !== 'undefined') {
       localStorage.removeItem('accio-token');
+      // Dispatch custom event to notify components about auth state change
+      window.dispatchEvent(new CustomEvent('authStateChanged', { detail: { isLoggedIn: false } }));
     }
   }
 

@@ -8,7 +8,42 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem("accio-token"));
+    const checkAuth = () => {
+      setIsLoggedIn(!!localStorage.getItem("accio-token"));
+    };
+
+    // Check auth on mount
+    checkAuth();
+
+    // Listen for storage changes (when token is added/removed)
+    const handleStorageChange = (e) => {
+      if (e.key === "accio-token") {
+        checkAuth();
+      }
+    };
+
+    // Listen for custom auth state change events
+    const handleAuthStateChange = () => {
+      checkAuth();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("authStateChanged", handleAuthStateChange);
+
+    // Also check when the page becomes visible (in case token was added in another tab)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        checkAuth();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("authStateChanged", handleAuthStateChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   const handleLogout = () => {

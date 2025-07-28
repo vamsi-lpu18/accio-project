@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { body, validationResult } = require('express-validator');
 const Session = require('../models/Session');
-const { auth } = require('../middleware/auth');
+const { auth, optionalAuth } = require('../middleware/auth');
 const archiver = require('archiver');
 
 // In-memory storage for sessions when MongoDB is not available
@@ -13,7 +13,7 @@ const router = express.Router();
 // @route   GET /api/sessions
 // @desc    Get all sessions for current user
 // @access  Private (temporarily public for testing)
-router.get('/', async (req, res) => {
+router.get('/', optionalAuth, async (req, res) => {
   try {
     const { page = 1, limit = 10, search = '', sort = '-lastModified' } = req.query;
     
@@ -23,8 +23,17 @@ router.get('/', async (req, res) => {
     if (mongoose.connection.readyState !== 1) {
       console.log('🔍 MongoDB not connected, using in-memory sessions');
       
-      // Return in-memory sessions
-      const filteredSessions = inMemorySessions.filter(session => {
+      // Return in-memory sessions filtered by user
+      const userSessions = inMemorySessions.filter(session => {
+        // If user is authenticated, only show their sessions
+        if (req.user?._id) {
+          return session.user === req.user._id.toString();
+        }
+        // If no user, show anonymous sessions (for testing)
+        return !session.user || session.user === 'anonymous';
+      });
+
+      const filteredSessions = userSessions.filter(session => {
         if (search) {
           const searchLower = search.toLowerCase();
           return session.name.toLowerCase().includes(searchLower) ||
@@ -94,7 +103,7 @@ router.get('/', async (req, res) => {
 // @route   POST /api/sessions
 // @desc    Create a new session
 // @access  Private (temporarily public for testing)
-router.post('/', [
+router.post('/', optionalAuth, [
   body('name').trim().isLength({ min: 1, max: 100 }).withMessage('Session name is required and must be less than 100 characters'),
   body('description').optional().isLength({ max: 500 }).withMessage('Description must be less than 500 characters')
 ], async (req, res) => {
@@ -119,7 +128,7 @@ router.post('/', [
         id: sessionId,
         name,
         description,
-        user: req.user?._id || 'anonymous',
+        user: req.user?._id?.toString() || 'anonymous',
         elements: elements || [],
         chat: chat || [],
         code: code || { jsx: '', css: '' },
@@ -145,7 +154,7 @@ router.post('/', [
       const session = new Session({
         name,
         description,
-        user: req.user?._id || new mongoose.Types.ObjectId(),
+        user: req.user?._id || new mongoose.Types.ObjectId('000000000000000000000000'), // Anonymous user ID
         elements: elements || [],
         chat: chat || [],
         code: code || { jsx: '', css: '' },
@@ -168,7 +177,7 @@ router.post('/', [
         id: Date.now().toString(),
         name,
         description,
-        user: req.user?._id || new mongoose.Types.ObjectId(),
+        user: req.user?._id?.toString() || 'anonymous',
         elements: elements || [],
         chat: chat || [],
         code: code || { jsx: '', css: '' },
@@ -194,7 +203,7 @@ router.post('/', [
 // @route   GET /api/sessions/:id
 // @desc    Get a specific session with full data
 // @access  Private (temporarily public for testing)
-router.get('/:id', async (req, res) => {
+router.get('/:id', optionalAuth, async (req, res) => {
   try {
     try {
       // Build query - if user is authenticated, filter by user, otherwise get any session
@@ -224,7 +233,7 @@ router.get('/:id', async (req, res) => {
 // @route   PUT /api/sessions/:id
 // @desc    Update a session
 // @access  Private (temporarily public for testing)
-router.put('/:id', [
+router.put('/:id', optionalAuth, [
   body('name').optional().trim().isLength({ min: 1, max: 100 }).withMessage('Session name must be less than 100 characters'),
   body('description').optional().isLength({ max: 500 }).withMessage('Description must be less than 500 characters')
 ], async (req, res) => {
@@ -266,7 +275,7 @@ router.put('/:id', [
 // @route   DELETE /api/sessions/:id
 // @desc    Delete a session
 // @access  Private (temporarily public for testing)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', optionalAuth, async (req, res) => {
   try {
     // Build query - if user is authenticated, filter by user, otherwise delete any session
     const query = { _id: req.params.id };

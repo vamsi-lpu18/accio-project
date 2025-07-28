@@ -19,7 +19,7 @@ export default function LoginPage() {
 
     try {
       await apiService.login({ email: formData.email, password: formData.password });
-      // Redirect to dashboard
+      // Redirect to dashboard and force a refresh to update the header
       window.location.href = "/dashboard";
     } catch (error) {
       setError(error.message || "Login failed");
