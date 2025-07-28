@@ -3,8 +3,10 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import apiService from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 
 export default function LoginPage() {
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -21,8 +23,12 @@ export default function LoginPage() {
       console.log('🔐 Login: Attempting login...');
       const response = await apiService.login({ email: formData.email, password: formData.password });
       console.log('🔐 Login: Login successful, response:', response);
-      // Redirect to dashboard and force a refresh to update the header
-      window.location.href = "/dashboard";
+      
+      // Use AuthContext to update authentication state
+      if (response.token) {
+        login(response.token);
+        window.location.href = "/dashboard";
+      }
     } catch (error) {
       console.error('🔐 Login: Login failed:', error);
       setError(error.message || "Login failed");
