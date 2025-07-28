@@ -88,6 +88,11 @@ class ApiService {
       body: JSON.stringify(credentials),
     });
     
+    // Check if there was an error in the response
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    
     if (response.token) {
       this.setToken(response.token);
     }

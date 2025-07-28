@@ -20,14 +20,19 @@ export default function LoginPage() {
     setError("");
 
     try {
-      console.log('🔐 Login: Attempting login...');
+      console.log('🔐 Login: Attempting login with:', { email: formData.email });
       const response = await apiService.login({ email: formData.email, password: formData.password });
-      console.log('🔐 Login: Login successful, response:', response);
+      console.log('🔐 Login: Login response:', response);
       
       // Use AuthContext to update authentication state
       if (response.token) {
+        console.log('🔐 Login: Token received, logging in...');
         login(response.token);
         window.location.href = "/dashboard";
+      } else {
+        console.error('🔐 Login: No token in response');
+        setError("Login successful but no token received");
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('🔐 Login: Login failed:', error);
