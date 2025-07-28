@@ -167,7 +167,25 @@ class ApiService {
 
   // Health check
   async healthCheck() {
-    return this.request('/health');
+    // Health endpoint is at root level, not under /api
+    const url = `${this.baseURL.replace('/api', '')}/health`;
+    const config = {
+      headers: this.getHeaders(),
+    };
+
+    try {
+      const response = await fetch(url, config);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Health check failed');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Health Check Error:', error);
+      throw error;
+    }
   }
 }
 
