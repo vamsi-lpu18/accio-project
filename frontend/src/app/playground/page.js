@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useAppContext } from "../../context/AppContext";
 import dynamic from "next/dynamic";
 import PropertyPanel from "../../components/PropertyPanel";
@@ -177,7 +177,7 @@ function renderJSX(elements, codeType = "jsx") {
   };
 }
 
-export default function PlaygroundPage() {
+function PlaygroundContent() {
   const { chat, setChat, code, setCode } = useAppContext();
   const searchParams = useSearchParams();
   const [elements, setElements] = useState([
@@ -1395,5 +1395,13 @@ export default function PlaygroundPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PlaygroundPage() {
+  return (
+    <Suspense fallback={<div className="h-screen bg-gray-950 flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
+      <PlaygroundContent />
+    </Suspense>
   );
 } 
