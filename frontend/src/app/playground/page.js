@@ -204,7 +204,7 @@ export default function PlaygroundPage() {
     if (sessionId) {
       loadSession(sessionId);
     }
-  }, [searchParams]);
+  }, [searchParams, loadSession]);
 
   // Add new element
   const addElement = type => {
@@ -873,11 +873,11 @@ export default function PlaygroundPage() {
                 <div className="text-xs space-y-2">
                   <p className="text-gray-500">Try saying:</p>
                   <div className="space-y-1">
-                    <p className="text-gray-600">• "make it red"</p>
-                    <p className="text-gray-600">• "make it larger"</p>
-                    <p className="text-gray-600">• "add more padding"</p>
-                    <p className="text-gray-600">• "add button"</p>
-                    <p className="text-gray-600">• "change text to Hello World"</p>
+                    <p className="text-gray-600">• &quot;make it red&quot;</p>
+                    <p className="text-gray-600">• &quot;make it larger&quot;</p>
+                    <p className="text-gray-600">• &quot;add more padding&quot;</p>
+                    <p className="text-gray-600">• &quot;add button&quot;</p>
+                    <p className="text-gray-600">• &quot;change text to Hello World&quot;</p>
                   </div>
                 </div>
               </div>
