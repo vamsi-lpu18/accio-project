@@ -45,16 +45,25 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
+      
+      // Handle cases where response might not be JSON
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.warn('Response is not JSON:', response.status, response.statusText);
+        data = { error: 'Invalid response format' };
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'API request failed');
+        throw new Error(data.error || `API request failed: ${response.status}`);
       }
 
       return data;
     } catch (error) {
       console.error('API Error:', error);
-      throw error;
+      // Return a default response instead of throwing to prevent crashes
+      return { error: error.message, sessions: [], chat: [] };
     }
   }
 

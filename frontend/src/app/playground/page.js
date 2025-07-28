@@ -180,6 +180,9 @@ function renderJSX(elements, codeType = "jsx") {
 function PlaygroundContent() {
   const { chat, setChat, code, setCode } = useAppContext();
   const searchParams = useSearchParams();
+  
+  // Add error state
+  const [error, setError] = useState(null);
   const [elements, setElements] = useState([
     { id: 1, type: "button", properties: { ...DEFAULT_PROPERTIES.button } },
   ]);
@@ -204,7 +207,7 @@ function PlaygroundContent() {
     if (sessionId) {
       loadSession(sessionId);
     }
-  }, [searchParams, loadSession]);
+  }, [searchParams]);
 
   // Add new element
   const addElement = type => {
@@ -739,6 +742,7 @@ function PlaygroundContent() {
   const loadSession = async (sessionId) => {
     try {
       console.log('Loading session:', sessionId);
+      setError(null);
       
       // First try to load from backend
       try {
@@ -760,27 +764,35 @@ function PlaygroundContent() {
         }
       } catch (backendError) {
         console.log('Backend load failed, trying localStorage:', backendError);
+        setError(`Failed to load from backend: ${backendError.message}`);
       }
       
       // Fallback to localStorage
-      const sessions = JSON.parse(localStorage.getItem('accio-sessions') || '[]');
-      const session = sessions.find(s => s.id === sessionId);
-      if (session) {
-        console.log('Session loaded from localStorage:', session);
-        setElements(session.elements || []);
-        setChat(session.chat || []);
-        setCode(session.code || { jsx: "", css: "" });
-        setSessionName(session.name || "Untitled Session");
-        setCurrentSessionId(sessionId);
-        setCodeType(session.codeType || "jsx");
-        if (session.elements && session.elements.length > 0) {
-          setSelectedId(session.elements[0].id);
+      try {
+        const sessions = JSON.parse(localStorage.getItem('accio-sessions') || '[]');
+        const session = sessions.find(s => s.id === sessionId);
+        if (session) {
+          console.log('Session loaded from localStorage:', session);
+          setElements(session.elements || []);
+          setChat(session.chat || []);
+          setCode(session.code || { jsx: "", css: "" });
+          setSessionName(session.name || "Untitled Session");
+          setCurrentSessionId(sessionId);
+          setCodeType(session.codeType || "jsx");
+          if (session.elements && session.elements.length > 0) {
+            setSelectedId(session.elements[0].id);
+          }
+        } else {
+          console.log('Session not found in localStorage either');
+          setError('Session not found');
         }
-      } else {
-        console.log('Session not found in localStorage either');
+      } catch (localStorageError) {
+        console.error('Error reading from localStorage:', localStorageError);
+        setError('Failed to load session from local storage');
       }
     } catch (error) {
       console.error('Error loading session:', error);
+      setError(`Error loading session: ${error.message}`);
     }
   };
 
@@ -854,6 +866,24 @@ function PlaygroundContent() {
           </div>
         </div>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-900 border-b border-red-700 px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-red-200">⚠️</span>
+              <span className="text-red-200">{error}</span>
+            </div>
+            <button 
+              onClick={() => setError(null)}
+              className="text-red-300 hover:text-red-100"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
@@ -1400,7 +1430,14 @@ function PlaygroundContent() {
 
 export default function PlaygroundPage() {
   return (
-    <Suspense fallback={<div className="h-screen bg-gray-950 flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
+    <Suspense fallback={
+      <div className="h-screen bg-gray-950 flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+          <div>Loading playground...</div>
+        </div>
+      </div>
+    }>
       <PlaygroundContent />
     </Suspense>
   );
