@@ -9,7 +9,10 @@ export default function Header() {
 
   useEffect(() => {
     const checkAuth = () => {
-      setIsLoggedIn(!!localStorage.getItem("accio-token"));
+      const token = localStorage.getItem("accio-token");
+      const newAuthState = !!token;
+      console.log('🔐 Header: Checking auth state, token exists:', !!token, 'Current state:', isLoggedIn);
+      setIsLoggedIn(newAuthState);
     };
 
     // Check auth on mount
@@ -18,12 +21,14 @@ export default function Header() {
     // Listen for storage changes (when token is added/removed)
     const handleStorageChange = (e) => {
       if (e.key === "accio-token") {
+        console.log('🔐 Header: Storage event detected for accio-token');
         checkAuth();
       }
     };
 
     // Listen for custom auth state change events
-    const handleAuthStateChange = () => {
+    const handleAuthStateChange = (e) => {
+      console.log('🔐 Header: Custom auth state change event detected', e.detail);
       checkAuth();
     };
 
@@ -33,18 +38,25 @@ export default function Header() {
     // Also check when the page becomes visible (in case token was added in another tab)
     const handleVisibilityChange = () => {
       if (!document.hidden) {
+        console.log('🔐 Header: Page became visible, checking auth state');
         checkAuth();
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
+    // Check auth state periodically (fallback)
+    const interval = setInterval(() => {
+      checkAuth();
+    }, 1000);
+
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("authStateChanged", handleAuthStateChange);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      clearInterval(interval);
     };
-  }, []);
+  }, [isLoggedIn]);
 
   const handleLogout = () => {
     localStorage.removeItem("accio-token");

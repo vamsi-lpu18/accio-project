@@ -8,11 +8,14 @@ class ApiService {
 
   // Set authentication token
   setToken(token) {
+    console.log('🔐 API Service: Setting token:', !!token);
     this.token = token;
     if (typeof window !== 'undefined') {
       localStorage.setItem('accio-token', token);
+      console.log('🔐 API Service: Token saved to localStorage');
       // Dispatch custom event to notify components about auth state change
       window.dispatchEvent(new CustomEvent('authStateChanged', { detail: { isLoggedIn: true } }));
+      console.log('🔐 API Service: Custom event dispatched');
     }
   }
 
